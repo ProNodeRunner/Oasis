@@ -11,13 +11,13 @@ NC='\\033[0m' # Нет цвета (сброс цвета)
 
 # Проверка наличия curl и установка, если не установлен
 if ! command -v curl &> /dev/null; then
-    sudo apt update
-    sudo apt install curl -y
+    sudo DEBIAN_FRONTEND=noninteractive apt update
+    sudo DEBIAN_FRONTEND=noninteractive apt install curl -y
 fi
 sleep 1
 
 # Отображаем логотип
-curl -s https://raw.githubusercontent.com/ProNodeRunner/Logo/refs/heads/main/Logo | bash
+curl -s https://raw.githubusercontent.com/noxuspace/cryptofortochka/main/logo_club.sh | bash
 
 # Проверка версии Ubuntu
 REQUIRED_VERSION=22.04
@@ -28,94 +28,97 @@ if (( $(echo "$UBUNTU_VERSION < $REQUIRED_VERSION" | bc -l) )); then
 fi
 
 # Меню
-    echo -e "${YELLOW}Выберите действие:${NC}"
-    echo -e "${CYAN}1) Установка ноды${NC}"
-    echo -e "${CYAN}2) Обновление ноды${NC}"
-    echo -e "${CYAN}3) Переход в сессию screen${NC}"
-    echo -e "${CYAN}4) Удаление ноды${NC}"
+echo -e "${YELLOW}Выберите действие:${NC}"
+echo -e "${CYAN}1) Установка ноды${NC}"
+echo -e "${CYAN}2) Обновление ноды${NC}"
+echo -e "${CYAN}3) Переход в сессию screen${NC}"
+echo -e "${CYAN}4) Удаление ноды${NC}"
 
-    echo -e "${YELLOW}Введите номер:${NC} "
-    read choice
+echo -e "${YELLOW}Введите номер:${NC} "
 
-    case $choice in
-        1)
-            echo -e "${BLUE}Устанавливаем ноду Nexus...${NC}"
+# Автоматический выбор пункта 1
+choice=1
 
-            # Обновление и установка необходимых компонентов
-            sudo apt update -y
-            sudo apt upgrade -y
-            sudo DEBIAN_FRONTEND=noninteractive apt install -y build-essential pkg-config libssl-dev git-all protobuf-compiler cargo screen unzip
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-            source $HOME/.cargo/env
-            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
-            source ~/.bashrc
-            rustup update
-            sudo apt remove -y protobuf-compiler
-            curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.2/protoc-25.2-linux-x86_64.zip
-            unzip protoc-25.2-linux-x86_64.zip -d $HOME/.local
-            export PATH="$HOME/.local/bin:$PATH"
-            protoc --version
+case $choice in
+    1)
+        echo -e "${BLUE}Устанавливаем ноду Nexus...${NC}"
 
-            # Проверка наличия сессий screen для Nexus
-            SESSION_IDS=$(screen -ls | grep "nexus" | awk '{print $1}' | cut -d '.' -f 1)
+        # Обновление и установка необходимых компонентов
+        sudo DEBIAN_FRONTEND=noninteractive apt update -y
+        sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y
+        sudo DEBIAN_FRONTEND=noninteractive apt install -y build-essential pkg-config libssl-dev git-all protobuf-compiler cargo screen unzip
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source $HOME/.cargo/env
+        echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+        source ~/.bashrc
+        rustup update
+        sudo DEBIAN_FRONTEND=noninteractive apt remove -y protobuf-compiler
+        curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.2/protoc-25.2-linux-x86_64.zip
+        unzip protoc-25.2-linux-x86_64.zip -d $HOME/.local
+        export PATH="$HOME/.local/bin:$PATH"
+        protoc --version
 
-            if [ -n "$SESSION_IDS" ]; then
-                echo -e "${BLUE}Завершение сессий screen с идентификаторами: $SESSION_IDS${NC}"
-                for SESSION_ID in $SESSION_IDS; do
-                    screen -S "$SESSION_ID" -X quit
-                done
-            else
-                echo -e "${BLUE}Сессии screen для ноды Nexus не найдены, создаем сессию...${NC}"
-            fi
+        # Проверка наличия сессий screen для Nexus
+        SESSION_IDS=$(screen -ls | grep "nexus" | awk '{print $1}' | cut -d '.' -f 1)
 
-            # Создание новой сессии screen
-            screen -dmS nexus
+        if [ -n "$SESSION_IDS" ]; then
+            echo -e "${BLUE}Завершение сессий screen с идентификаторами: $SESSION_IDS${NC}"
+            for SESSION_ID in $SESSION_IDS; do
+                screen -S "$SESSION_ID" -X quit
+            done
+        else
+            echo -e "${BLUE}Сессии screen для ноды Nexus не найдены, создаем сессию...${NC}"
+        fi
 
-            # Заключительное сообщение
-            echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
-            echo -e "${YELLOW}Нода запущена в screen-сессии с именем: nexus${NC}"
-            echo -e "${YELLOW}Для перехода в сессию используйте:${NC}"
-            echo -e "screen -r nexus"
-            echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
-            echo -e "${GREEN}D&GW3T — вся крипта в одном месте!${NC}"
-            echo -e "${CYAN}Наш Telegram https://t.me/D-GW3T${NC}"
-            ;;
+        # Создание новой сессии screen
+        screen -dmS nexus
 
-        2)
-            echo -e "${BLUE}Обновление ноды Nexus...${NC}"
-            echo -e "${GREEN}Установлена актуальная версия ноды!${NC}"
-            ;;
+        # Заключительное сообщение
+        echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
+        echo -e "${YELLOW}Нода запущена в screen-сессии с именем: nexus${NC}"
+        echo -e "${YELLOW}Для перехода в сессию используйте:${NC}"
+        echo -e "screen -r nexus"
+        echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
+        echo -e "${GREEN}CRYPTO FORTOCHKA — вся крипта в одном месте!${NC}"
+        echo -e "${CYAN}Наш Telegram https://t.me/cryptoforto${NC}"
+        ;;
 
-        3)
-            echo -e "${BLUE}Переход в сессию Nexus...${NC}"
-            screen -r nexus
-            ;;
-                   
-        4)
-            echo -e "${BLUE}Удаление ноды Nexus...${NC}"
+    2)
+        echo -e "${BLUE}Обновление ноды Nexus...${NC}"
+        echo -e "${GREEN}Установлена актуальная версия ноды!${NC}"
+        ;;
 
-            # Проверка наличия сессий screen для Nexus
-            SESSION_IDS=$(screen -ls | grep "nexus" | awk '{print $1}' | cut -d '.' -f 1)
+    3)
+        echo -e "${BLUE}Переход в сессию Nexus...${NC}"
+        screen -r nexus
+        ;;
+               
+    4)
+        echo -e "${BLUE}Удаление ноды Nexus...${NC}"
 
-            if [ -n "$SESSION_IDS" ]; then
-                echo -e "${BLUE}Завершение сессий screen с идентификаторами: $SESSION_IDS${NC}"
-                for SESSION_ID in $SESSION_IDS; do
-                    screen -S "$SESSION_ID" -X quit
-                done
-            else
-                echo -e "${BLUE}Сессии screen для ноды Nexus не найдены, удаление завершено.${NC}"
-            fi
+        # Проверка наличия сессий screen для Nexus
+        SESSION_IDS=$(screen -ls | grep "nexus" | awk '{print $1}' | cut -d '.' -f 1)
 
-            rm -rf .nexus/
-            sleep 1
+        if [ -n "$SESSION_IDS" ]; then
+            echo -e "${BLUE}Завершение сессий screen с идентификаторами: $SESSION_IDS${NC}"
+            for SESSION_ID in $SESSION_IDS; do
+                screen -S "$SESSION_ID" -X quit
+            done
+        else
+            echo -e "${BLUE}Сессии screen для ноды Nexus не найдены, удаление завершено.${NC}"
+        fi
 
-            # Заключительное сообщение
-            echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
-            echo -e "${GREEN}D&GW3T. Абьюз - это искусство...${NC}"
-            sleep 1
-            ;;
+        rm -rf .nexus/
+        sleep 1
 
-        *)
-            echo -e "${RED}Неверный выбор. Пожалуйста, введите номер от 1 до 4.${NC}"
-            ;;
-    esac
+        # Заключительное сообщение
+        echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
+        echo -e "${GREEN}CRYPTO FORTOCHKA — вся крипта в одном месте!${NC}"
+        echo -e "${CYAN}Наш Telegram https://t.me/cryptoforto${NC}"
+        sleep 1
+        ;;
+
+    *)
+        echo -e "${RED}Неверный выбор. Пожалуйста, введите номер от 1 до 4.${NC}"
+        ;;
+esac
