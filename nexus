@@ -32,102 +32,106 @@ if (( $(echo "$UBUNTU_VERSION < $REQUIRED_VERSION" | bc -l) )); then
 fi
 
 # Меню
-    echo -e "${YELLOW}Выберите действие:${NC}"
-    echo -e "${CYAN}1) Установка ноды${NC}"
-    echo -e "${CYAN}2) Обновление ноды${NC}"
-    echo -e "${CYAN}3) Переход в сессию screen${NC}"
-    echo -e "${CYAN}4) Удаление ноды${NC}"
+clear
+echo -e "${PURPLE}=======================================================================${NC}"
+echo -e "${CYAN}     D&G. Абьюз - это искусство... ${NC}"
+echo -e "${PURPLE}=======================================================================${NC}"
+echo -e "${YELLOW}Выберите действие:${NC}"
+echo -e "${CYAN}1) Установка ноды${NC}"
+echo -e "${CYAN}2) Обновление ноды${NC}"
+echo -e "${CYAN}3) Переход в сессию screen${NC}"
+echo -e "${CYAN}4) Удаление ноды${NC}"
+echo -e "${YELLOW}Введите номер:${NC} "
+read choice
 
-    echo -e "${YELLOW}Введите номер:${NC} "
-    read choice
+case $choice in
+    1)
+        echo -e "${BLUE}Устанавливаем ноду Nexus...${NC}"
 
-    case $choice in
-        1)
-            echo -e "${BLUE}Устанавливаем ноду Nexus...${NC}"
+        # Устанавливаем опции для устранения всех интерактивных запросов
+        export DEBIAN_FRONTEND=noninteractive
+        export NEEDRESTART_MODE=a
+        export NEEDRESTART_SUSPEND=1
 
-            # Устанавливаем опции для устранения всех интерактивных запросов
-            export DEBIAN_FRONTEND=noninteractive
-            export NEEDRESTART_MODE=a
+        # Обновление и установка необходимых компонентов
+        sudo DEBIAN_FRONTEND=noninteractive apt update -y
+        sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y --with-new-pkgs < <(echo 1)
+        sudo DEBIAN_FRONTEND=noninteractive apt install -y build-essential pkg-config libssl-dev git-all protobuf-compiler cargo screen unzip needrestart
 
-            # Обновление и установка необходимых компонентов
-            sudo DEBIAN_FRONTEND=noninteractive apt update -y
-            sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y --with-new-pkgs
-            sudo DEBIAN_FRONTEND=noninteractive apt install -y build-essential pkg-config libssl-dev git-all protobuf-compiler cargo screen unzip needrestart
+        # Установка Rust без подтверждения
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source $HOME/.cargo/env
+        echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+        source ~/.bashrc
+        rustup update
 
-            # Установка Rust без подтверждения
-            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-            source $HOME/.cargo/env
-            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
-            source ~/.bashrc
-            rustup update
+        # Замена стандартного protobuf-compiler
+        sudo DEBIAN_FRONTEND=noninteractive apt remove -y protobuf-compiler
+        curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.2/protoc-25.2-linux-x86_64.zip
+        unzip protoc-25.2-linux-x86_64.zip -d $HOME/.local
+        export PATH="$HOME/.local/bin:$PATH"
+        protoc --version
 
-            # Замена стандартного protobuf-compiler
-            sudo DEBIAN_FRONTEND=noninteractive apt remove -y protobuf-compiler
-            curl -LO https://github.com/protocolbuffers/protobuf/releases/download/v25.2/protoc-25.2-linux-x86_64.zip
-            unzip protoc-25.2-linux-x86_64.zip -d $HOME/.local
-            export PATH="$HOME/.local/bin:$PATH"
-            protoc --version
+        # Проверка наличия сессий screen для Nexus
+        SESSION_IDS=$(screen -ls | grep "nexus" | awk '{print $1}' | cut -d '.' -f 1)
 
-            # Проверка наличия сессий screen для Nexus
-            SESSION_IDS=$(screen -ls | grep "nexus" | awk '{print $1}' | cut -d '.' -f 1)
+        if [ -n "$SESSION_IDS" ]; then
+            echo -e "${BLUE}Завершение сессий screen с идентификаторами: $SESSION_IDS${NC}"
+            for SESSION_ID in $SESSION_IDS; do
+                screen -S "$SESSION_ID" -X quit
+            done
+        else
+            echo -e "${BLUE}Сессии screen для ноды Nexus не найдены, создаем сессию...${NC}"
+        fi
 
-            if [ -n "$SESSION_IDS" ]; then
-                echo -e "${BLUE}Завершение сессий screen с идентификаторами: $SESSION_IDS${NC}"
-                for SESSION_ID in $SESSION_IDS; do
-                    screen -S "$SESSION_ID" -X quit
-                done
-            else
-                echo -e "${BLUE}Сессии screen для ноды Nexus не найдены, создаем сессию...${NC}"
-            fi
+        # Создание новой сессии screen
+        screen -dmS nexus
 
-            # Создание новой сессии screen
-            screen -dmS nexus
+        # Заключительное сообщение
+        echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
+        echo -e "${YELLOW}Нода запущена в screen-сессии с именем: nexus${NC}"
+        echo -e "${YELLOW}Для перехода в сессию используйте:${NC}"
+        echo -e "screen -r nexus"
+        echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
+        echo -e "${GREEN}CRYPTO FORTOCHKA — вся крипта в одном месте!${NC}"
+        echo -e "${CYAN}Наш Telegram https://t.me/cryptoforto${NC}"
+        ;;
 
-            # Заключительное сообщение
-            echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
-            echo -e "${YELLOW}Нода запущена в screen-сессии с именем: nexus${NC}"
-            echo -e "${YELLOW}Для перехода в сессию используйте:${NC}"
-            echo -e "screen -r nexus"
-            echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
-            echo -e "${GREEN}CRYPTO FORTOCHKA — вся крипта в одном месте!${NC}"
-            echo -e "${CYAN}Наш Telegram https://t.me/cryptoforto${NC}"
-            ;;
+    2)
+        echo -e "${BLUE}Обновление ноды Nexus...${NC}"
+        echo -e "${GREEN}Установлена актуальная версия ноды!${NC}"
+        ;;
 
-        2)
-            echo -e "${BLUE}Обновление ноды Nexus...${NC}"
-            echo -e "${GREEN}Установлена актуальная версия ноды!${NC}"
-            ;;
+    3)
+        echo -e "${BLUE}Переход в сессию Nexus...${NC}"
+        screen -r nexus
+        ;;
 
-        3)
-            echo -e "${BLUE}Переход в сессию Nexus...${NC}"
-            screen -r nexus
-            ;;
+    4)
+        echo -e "${BLUE}Удаление ноды Nexus...${NC}"
 
-        4)
-            echo -e "${BLUE}Удаление ноды Nexus...${NC}"
+        # Проверка наличия сессий screen для Nexus
+        SESSION_IDS=$(screen -ls | grep "nexus" | awk '{print $1}' | cut -d '.' -f 1)
 
-            # Проверка наличия сессий screen для Nexus
-            SESSION_IDS=$(screen -ls | grep "nexus" | awk '{print $1}' | cut -d '.' -f 1)
+        if [ -n "$SESSION_IDS" ]; then
+            echo -e "${BLUE}Завершение сессий screen с идентификаторами: $SESSION_IDS${NC}"
+            for SESSION_ID in $SESSION_IDS; do
+                screen -S "$SESSION_ID" -X quit
+            done
+        else
+            echo -e "${BLUE}Сессии screen для ноды Nexus не найдены, удаление завершено.${NC}"
+        fi
 
-            if [ -n "$SESSION_IDS" ]; then
-                echo -e "${BLUE}Завершение сессий screen с идентификаторами: $SESSION_IDS${NC}"
-                for SESSION_ID in $SESSION_IDS; do
-                    screen -S "$SESSION_ID" -X quit
-                done
-            else
-                echo -e "${BLUE}Сессии screen для ноды Nexus не найдены, удаление завершено.${NC}"
-            fi
+        rm -rf .nexus/
+        sleep 1
 
-            rm -rf .nexus/
-            sleep 1
+        # Заключительное сообщение
+        echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
+        echo -e "${GREEN} D&G. Абьюз - это искусство... !${NC}"
+        sleep 1
+        ;;
 
-            # Заключительное сообщение
-            echo -e "${PURPLE}-----------------------------------------------------------------------${NC}"
-            echo -e "${GREEN} D&G. Абьюз - это искусство... !${NC}"
-                     sleep 1
-            ;;
-
-        *)
-            echo -e "${RED}Неверный выбор. Пожалуйста, введите номер от 1 до 4.${NC}"
-            ;;
-    esac
+    *)
+        echo -e "${RED}Неверный выбор. Пожалуйста, введите номер от 1 до 4.${NC}"
+        ;;
+esac
